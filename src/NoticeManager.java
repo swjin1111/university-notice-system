@@ -1,64 +1,65 @@
 import java.util.ArrayList;
-import java.util.Collections;
+import java.util.Collections; //  Notice 객체들의 compareTo 메서드를 기반으로 자동으로 정렬해줌
 import java.util.List;
+
+/*
+NoticeManager는 전체적인 공지사항 수집, 정제, 알림 기능을 관장.
+notice.json을 관리하는 핵심 엔진 기능 
+*/
 
 public class NoticeManager {
 
-    private List<NoticeSource> sources;
-    private NoticeFilter filter;
-    private NotificationService notifier;
-    private NoticeRepository repository;
+    private PortalNoticeSource source; // 공지사항을 가져올 소스 (단일 소스로 변경됨)
+    private NoticeRepository repository; // 공지사항들을 저장할 repository
 
-    public NoticeManager(NoticeRepository repository) {
-        this.sources = new ArrayList<>();
-        this.filter = new NoticeFilter();
-        this.notifier = new NotificationService();
+    public NoticeManager(NoticeRepository repository) { // 생성자.
         this.repository = repository;
     }
 
-    public void addSource(NoticeSource source) {
-        sources.add(source);
+    public void setSource(PortalNoticeSource source) { // 단일 소스 설정
+        this.source = source;
     }
 
-    public void run(User user) {
+    /*
+     * run정리
+     * 공지사항 수집 method. [F5누르거나 새로고침 눌렀을 때, 설정으로 키워드 변경했을 때, 자동 업데이트 등]
+     * MainFrame.java에서 int newCount에서 사용
+     */
+    public int run(User user) {
         cleanupNotices(user);
 
-        List<Notice> allNotices = new ArrayList<>();
-        for (NoticeSource source : sources) {
-            allNotices.addAll(source.fetchNotices());
-        }
-        System.out.println("\n[시스템] 총 " + allNotices.size() + "건의 공지를 수집했습니다.");
+        List<Notice> allNotices = source.fetchNotices();
+        List<Notice> keywordMatched = NoticeFilter.filterByKeyword(allNotices, user.getSubscribedKeywords());
 
-        List<Notice> keywordMatched = filter.filterByKeyword(allNotices, user.getSubscribedKeywords());
-
-        List<Notice> newNotices = new ArrayList<>();
-        for (Notice notice : keywordMatched) {
-            if (!repository.exists(notice)) {
-                newNotices.add(notice);
-            }
-        }
-
-        if (!newNotices.isEmpty()) {
-            repository.saveAll(newNotices);
-            notifier.notifyUser(user, newNotices);
-            System.out.println("[시스템] " + newNotices.size() + "개의 새로운 맞춤 공지를 저장하고 알림을 보냈습니다.");
-        } else {
-            System.out.println("[시스템] 새로운 맞춤 공지가 없습니다.");
-        }
-        System.out.println("[시스템] 현재 누적 저장된 공지 수: " + repository.findAll().size());
+        // 저장소에 저장을 요청하고, 새로 저장된 개수를 반환받음
+        return repository.saveAll(keywordMatched);
     }
 
+    /*
+     * CleanupNotices 정리.
+     * 키워드 변화 등을 토대로 공지사항 정제 [1.run(공지 수집) 2.사용자의 관심 키워드 변경] 이 두가지 경우에 사용
+     * run(user) 내부
+     * MainFrame.java의 설정 창 (저장 버튼 클릭 시)
+     */
     public void cleanupNotices(User user) {
         List<Notice> stored = repository.findAll();
-        List<Notice> toKeep = filter.filterByKeyword(stored, user.getSubscribedKeywords());
+        List<Notice> toKeep = NoticeFilter.filterByKeyword(stored, user.getSubscribedKeywords());
 
         if (stored.size() > toKeep.size()) {
             int removedCount = stored.size() - toKeep.size();
             repository.clearAll();
             repository.saveAll(toKeep);
-            System.out.println("[시스템] 키워드 변경으로 인해 불필요한 공지 " + removedCount + "건을 정리했습니다.");
         }
     }
+
+    /*
+     * getStoredNotices 정리
+     * 저장된 공지사항들을 불러와서 리스트로 반환하는 method
+     * MainFrame.java에서 공지사항 리스트 테이블에 뿌릴 때 사용
+     * 
+     * getStoredNotices는 공지사항들을 저장할 repository에서 공지사항들을 불러와서 리스트로 반환하는 method.
+     * MainFrame.java에서 공지사항 리스트 테이블에 뿌릴 때 사용.
+     */
 
     public List<Notice> getStoredNotices() {
         List<Notice> stored = repository.findAll();
