@@ -1,46 +1,26 @@
 import java.io.*;
-import java.util.Scanner;
 
 public class Main {
 
     public static void main(String[] args) {
-        // 1. 초기 설정
         NoticeRepository repository = new JsonNoticeRepository();
         NoticeManager manager = new NoticeManager(repository);
         manager.addSource(new PortalNoticeSource());
 
-        // 2. 사용자 설정 로드 (외부 파일에서 읽기)
         User user = loadUserFromJson("user.json");
 
-        Scanner scanner = new Scanner(System.in);
-        while (true) {
-            System.out.println("\n===== [대학 공지 알림 시스템] =====");
-            System.out.println("사용자: " + user.getName());
-            System.out.println("키워드: " + user.getSubscribedKeywords());
-            System.out.println("-----------------------------------");
-            System.out.println("1. 새로운 공지 수집 및 알림 확인");
-            System.out.println("2. 저장된 전체 공지 목록 보기");
-            System.out.println("3. 종료");
-            System.out.print("선택: ");
-
-            String choice = scanner.nextLine();
-
-            if (choice.equals("1")) {
-                manager.run(user);
-            } else if (choice.equals("2")) {
-                manager.showStoredNotices();
-            } else if (choice.equals("3")) {
-                System.out.println("시스템을 종료합니다.");
-                break;
-            } else {
-                System.out.println("잘못된 선택입니다. 다시 입력해주세요.");
+        javax.swing.SwingUtilities.invokeLater(() -> {
+            try {
+                javax.swing.UIManager.setLookAndFeel(javax.swing.UIManager.getSystemLookAndFeelClassName());
+            } catch (Exception ignored) {
             }
-        }
-        scanner.close();
+
+            MainFrame frame = new MainFrame(manager, user);
+            frame.setVisible(true);
+        });
     }
 
-    /** user.json 파일에서 사용자 정보를 읽어오는 간이 메서드 */
-    private static User loadUserFromJson(String fileName) {
+    public static User loadUserFromJson(String fileName) {
         File file = new File(fileName);
         if (!file.exists()) {
             User defaultUser = new User("기본사용자");
@@ -48,7 +28,8 @@ public class Main {
             return defaultUser;
         }
 
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader br = new BufferedReader(
+                new InputStreamReader(new FileInputStream(file), java.nio.charset.StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = br.readLine()) != null)
@@ -57,8 +38,7 @@ public class Main {
             String content = sb.toString();
             String name = JsonUtil.extractValue(content, "name");
             User user = new User(name != null ? name : "Unknown");
-            
-            // 키워드 리스트 추출 (단순 파싱)
+
             int keyStart = content.indexOf("\"keywords\": [") + 13;
             int keyEnd = content.indexOf("]", keyStart);
             if (keyStart > 12 && keyEnd > keyStart) {
@@ -71,6 +51,23 @@ public class Main {
             return user;
         } catch (IOException e) {
             return new User("ErrorUser");
+        }
+    }
+
+    public static void saveUserToJson(User user, String fileName) {
+        try (PrintWriter out = new PrintWriter(new BufferedWriter(
+                new OutputStreamWriter(new FileOutputStream(fileName), java.nio.charset.StandardCharsets.UTF_8)))) {
+            out.println("{");
+            out.printf("  \"name\": \"%s\",%n", user.getName());
+            out.println("  \"keywords\": [");
+            java.util.List<String> keywords = user.getSubscribedKeywords();
+            for (int i = 0; i < keywords.size(); i++) {
+                out.printf("    \"%s\"%s%n", keywords.get(i), (i < keywords.size() - 1 ? "," : ""));
+            }
+            out.println("  ]");
+            out.println("}");
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 }

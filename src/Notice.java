@@ -1,7 +1,3 @@
-/**
- * 공지사항 하나를 표현하는 클래스.
- * 데이터(속성)만 담당하며, 로직은 포함하지 않는다. (단일 책임 원칙)
- */
 public class Notice implements Comparable<Notice> {
 
     private String title;
@@ -11,28 +7,21 @@ public class Notice implements Comparable<Notice> {
     private String date;
 
     public Notice(String title, String content, String category, String source, String date) {
-        this.title    = title;
-        this.content  = content;
+        this.title = title;
+        this.content = content;
         this.category = category;
-        this.source   = source;
-        this.date     = date;
+        this.source = source;
+        this.date = date;
     }
 
-    // 날짜 기준 내림차순 정렬 (최신순)
-    @Override
-    public int compareTo(Notice o) {
-        return o.date.compareTo(this.date);
-    }
-
-    // ── Getters ──────────────────────────────────────────────────────────────
-    public String getTitle()    { return title; }
-    public String getContent()  { return content; }
+    public String getTitle() { return title; }
+    public String getContent() { return content; }
     public String getCategory() { return category; }
-    public String getSource()   { return source; }
-    public String getDate()     { return date; }
+    public String getSource() { return source; }
+    public String getDate() { return date; }
 
     @Override
-    public String toString() {
-        return String.format("[%s] [%s] %s (%s) - %s", source, category, title, date, content);
+    public int compareTo(Notice other) {
+        return other.date.compareTo(this.date);
     }
 }

@@ -2,10 +2,6 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * 공지사항을 JSON 파일 형식으로 저장하는 클래스.
- * 라이브러리 없이 구현하기 위해 간단한 문자열 처리를 사용한다.
- */
 public class JsonNoticeRepository implements NoticeRepository {
 
     private final String filePath = "notices.json";
@@ -16,19 +12,11 @@ public class JsonNoticeRepository implements NoticeRepository {
     }
 
     @Override
-    public void save(Notice notice) {
-        if (!exists(notice)) {
-            cachedNotices.add(notice);
-            // 매번 commit() 하지 않고 메모리에만 유지
-        }
-    }
-
-    @Override
     public void saveAll(List<Notice> notices) {
         for (Notice notice : notices) {
             if (!exists(notice)) cachedNotices.add(notice);
         }
-        commit(); // 일괄 저장 후 딱 한 번만 파일 쓰기
+        commit();
     }
 
     @Override
@@ -44,7 +32,7 @@ public class JsonNoticeRepository implements NoticeRepository {
 
     @Override
     public void commit() {
-        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(filePath)))) {
+        try (PrintWriter out = new PrintWriter(new BufferedWriter(new OutputStreamWriter(new FileOutputStream(filePath), java.nio.charset.StandardCharsets.UTF_8)))) {
             out.println("[");
             for (int i = 0; i < cachedNotices.size(); i++) {
                 Notice n = cachedNotices.get(i);
@@ -75,7 +63,7 @@ public class JsonNoticeRepository implements NoticeRepository {
         File file = new File(filePath);
         if (!file.exists()) return list;
 
-        try (BufferedReader br = new BufferedReader(new FileReader(file))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(file), java.nio.charset.StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
             String line;
             while ((line = br.readLine()) != null) sb.append(line.trim());
