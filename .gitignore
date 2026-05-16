@@ -1,1 +1,18 @@
+# Compiled class files
 *.class
+bin/
+out/
+
+# IDE specific files
+.vscode/
+.idea/
+*.iml
+.project
+.classpath
+.settings/
+
+# Library files (usually we don't ignore lib if we want to commit jars, 
+# but if using Maven/Gradle we do. For manual lib, we might keep it.)
+# lib/
+# Data files
+*.json

@@ -2,7 +2,7 @@
  * 공지사항 하나를 표현하는 클래스.
  * 데이터(속성)만 담당하며, 로직은 포함하지 않는다. (단일 책임 원칙)
  */
-public class Notice {
+public class Notice implements Comparable<Notice> {
 
     private String title;
     private String content;
@@ -16,6 +16,12 @@ public class Notice {
         this.category = category;
         this.source   = source;
         this.date     = date;
+    }
+
+    // 날짜 기준 내림차순 정렬 (최신순)
+    @Override
+    public int compareTo(Notice o) {
+        return o.date.compareTo(this.date);
     }
 
     // ── Getters ──────────────────────────────────────────────────────────────
