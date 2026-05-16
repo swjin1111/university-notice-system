@@ -36,7 +36,10 @@ public class UserPersistence {
                 String rawKeywords = content.substring(keyStart, keyEnd);
                 String[] parts = rawKeywords.split(",");
                 for (String p : parts) {
-                    user.addKeyword(p.replace("\"", "").trim());
+                    String clean = p.replace("\"", "").trim();
+                    if (!clean.isEmpty()) {
+                        user.addKeyword(clean);
+                    }
                 }
             }
             return user;
